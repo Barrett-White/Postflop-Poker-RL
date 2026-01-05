@@ -4,7 +4,7 @@ A simplified **Heads-Up Texas Hold’em** environment + a **tabular Q-learning**
 
 - A full poker hand simulator (deck, dealing, board reveal by street)
 - Hand evaluation (best 5-card hand from 5/6/7 visible cards)
-- Pre-flop “GTO-style” playable-hand filters (to avoid training on junk hands)
+- Pre-flop “GTO-style” playable-hand filters
 - A custom RL environment with capped raises and action masking
 - Multiple scripted opponents to test exploitative learning
 - A training loop with win-rate and reward tracking + visualization
@@ -76,26 +76,10 @@ While this repo may be in a notebook, the code is organized into these component
 
 ## Pre-Flop Filter (GTO-Inspired)
 
-To make training more realistic and reduce wasted learning on trash starting hands:
+To make training more realistic and reduce wasted learning on bad starting hands:
 
 - The environment re-deals until:
   - Player 1 hand is “playable” under SB range (`is_sb_playable`)
   - Player 2 hand is “playable” under BB range (`is_bb_playable`)
 
 This approximates pre-flop folding without explicitly simulating pre-flop action.
-
----
-
-## Observation / State
-
-The environment returns an observation dictionary for Player 1 (the agent):
-
-```python
-{
-  "my_hand": (c1, c2),
-  "board": [...],              # visible board cards for current street
-  "pot": pot_size,
-  "stacks": [p1_stack, p2_stack],
-  "street": Street.FLOP|TURN|RIVER,
-  "active_bets": {0: amt, 1: amt}   # current street contributions
-}
