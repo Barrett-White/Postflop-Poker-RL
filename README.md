@@ -1,85 +1,121 @@
 # Postflop-Poker-RL
+# Postflop Poker RL (STOR 543)
 
-A simplified **Heads-Up Texas Hold’em** environment + a **tabular Q-learning** agent trained to make post-flop decisions (Flop/Turn/River) under a **fixed-limit** betting structure. The project includes:
+This project implements a simplified heads-up Texas Hold’em environment and a tabular Q-learning agent that learns post-flop decision making. The game uses a fixed-limit betting structure and only models play on the flop, turn, and river.
 
-- A full poker hand simulator (deck, dealing, board reveal by street)
-- Hand evaluation (best 5-card hand from 5/6/7 visible cards)
-- Pre-flop “GTO-style” playable-hand filters
-- A custom RL environment with capped raises and action masking
-- Multiple scripted opponents to test exploitative learning
-- A training loop with win-rate and reward tracking + visualization
+The goal was to study how a basic reinforcement learning agent behaves in a noisy, imperfect-information setting without relying on deep learning.
 
 ---
 
-## Project Structure (Logical)
+## What This Includes
 
-While this repo may be in a notebook, the code is organized into these components:
-
-1. **Card & Game Utilities**
-   - Deck creation and shuffling
-   - Dealing hole cards + board
-   - Card/hand/board string formatting
-
-2. **Poker Mechanics**
-   - Streets: FLOP / TURN / RIVER and visible board slicing
-   - Fixed-limit bet sizes by street
-   - Action space: `FOLD`, `CHECK_CALL`, `BET`
-
-3. **Hand Evaluation**
-   - Evaluate 5-card hands (`evaluate_5`)
-   - Evaluate best hand from hole + visible board (`evaluate_best_from_visible`)
-   - Showdown comparison (`compare_players`)
-
-4. **Environment**
-   - `PokerEnv`: handles state, legal actions, betting logic, raise cap, street transitions, showdown reward
-
-5. **Agent**
-   - `QLearningAgent`: tabular Q-learning with discretized state representation
-
-6. **Opponents**
-   - `RandomOpponent`, `ConservativeOpponent`, `AggressiveOpponent`
-
-7. **Training**
-   - `train_and_plot(...)`: runs episodes, updates Q-table, decays epsilon, plots win rate and average reward
+- A poker hand simulator (deck, dealing, board reveal)
+- Hand evaluation for 5, 6, or 7 visible cards
+- A custom RL environment with betting rules and raise caps
+- A tabular Q-learning agent
+- Several simple opponent strategies for testing
+- Training loops with win-rate and reward tracking
 
 ---
 
-## Rules of the Game (Simplified Heads-Up Hold’em)
+## Game Setup
 
-### Cards
-- Standard 52-card deck represented as integers `0..51`
-  - `rank = card % 13` (2..A mapped to `0..12`)
-  - `suit = card // 13` (♣♦♥♠ mapped to `0..3`)
+- Two-player (heads-up) Texas Hold’em
+- Standard 52-card deck
+- Only post-flop play is modeled
+- Streets: Flop, Turn, River
+- Fixed-limit betting:
+  - Flop bet size: 1
+  - Turn bet size: 2
+  - River bet size: 4
+- Maximum of 4 raises per street
 
-### Streets
-- Only post-flop play is modeled:
-  - **Flop**: 3 community cards revealed
-  - **Turn**: 4th revealed
-  - **River**: 5th revealed → showdown
-
-### Betting (Fixed Limit)
-- Fixed bet sizes:
-  - Flop: `1`
-  - Turn: `2`
-  - River: `4`
-
-### Actions
-- `FOLD`: concede the pot
-- `CHECK_CALL`: check if no bet, call if facing a bet
-- `BET`: place a bet (amount determined by the street)
-
-### Raise Cap
-- `MAX_RAISES = 4` per street
-- Action masking prevents betting when capped
+Actions available to the agent:
+- Fold
+- Check/Call
 
 ---
 
-## Pre-Flop Filter (GTO-Inspired)
+## Pre-Flop Handling
 
-To make training more realistic and reduce wasted learning on bad starting hands:
+Pre-flop betting is not explicitly modeled.  
+Instead, hands are filtered before dealing:
 
-- The environment re-deals until:
-  - Player 1 hand is “playable” under SB range (`is_sb_playable`)
-  - Player 2 hand is “playable” under BB range (`is_bb_playable`)
+- Player 1 must have a playable small-blind hand
+- Player 2 must have a playable big-blind hand
 
-This approximates pre-flop folding without explicitly simulating pre-flop action.
+This avoids training on obviously bad hands and keeps the focus on post-flop decisions.
+
+---
+
+## State Representation
+
+The agent uses a discretized state for tabular Q-learning.  
+Each state includes:
+
+- Hand category (high card, pair, two pair, etc.)
+- Simple board texture flags (paired, monotone)
+- Current street (flop, turn, river)
+- Whether the agent is facing a bet
+
+This keeps the state space small enough for tabular learning.
+
+---
+
+## Reward
+
+Rewards are based on net profit for Player 1:
+
+- Winning returns pot minus invested chips
+- Losing returns negative invested chips
+- Ties split the pot
+
+Rewards are only finalized at fold or showdown.
+
+---
+
+## Opponents
+
+Three opponent types are included:
+
+- Random: chooses valid actions uniformly
+- Conservative: only bets with pair or better
+- Aggressive: frequently bets and bluffs
+
+These are used to test whether the agent learns exploitative behavior.
+
+---
+
+## Training
+
+The training loop:
+- Runs repeated hands
+- Updates the Q-table
+- Uses epsilon-greedy exploration
+- Tracks win rate and average reward over time
+
+Plots are generated to visualize learning progress.
+
+---
+
+## Limitations
+
+This is a simplified environment by design.
+
+- No pre-flop betting
+- Fixed bet sizes only
+- Coarse state abstraction
+- No equity calculation
+- Tabular Q-learning instead of neural networks
+
+The goal is clarity and control, not realism.
+
+---
+
+## Possible Extensions
+
+- Add pre-flop actions
+- Add pot odds or stack-to-pot ratio features
+- Detect draws (flush, straight)
+- Replace Q-learning with DQN or actor-critic
+- Add self-play training
