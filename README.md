@@ -1,5 +1,4 @@
-# Postflop-Poker-RL
-# Postflop Poker RL (STOR 543)
+# Postflop Poker RL
 
 This project implements a simplified heads-up Texas Hold’em environment and a tabular Q-learning agent that learns post-flop decision making. The game uses a fixed-limit betting structure and only models play on the flop, turn, and river.
 
